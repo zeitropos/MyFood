@@ -1,25 +1,29 @@
 package br.ufal.ic.myfood.models;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.ArrayList;
 
-public class Empresa implements Serializable {
+public abstract class Empresa implements Serializable {
     private static final long serialVersionUID = 1L;
     private static int ultimoId = 0;
 
     private int id;
     private String nome;
     private String endereco;
-    private String tipoCozinha;
     private int donoId;
+    private List<Integer> entregadoresIds;
 
-    public Empresa() {}
+    public Empresa() {
+        this.entregadoresIds = new ArrayList<>();
+    }
 
-    public Empresa(String nome, String endereco, String tipoCozinha, int donoId) {
+    public Empresa(String nome, String endereco, int donoId) {
         this.id = ++ultimoId;
         this.nome = nome;
         this.endereco = endereco;
-        this.tipoCozinha = tipoCozinha;
         this.donoId = donoId;
+        this.entregadoresIds = new ArrayList<>();
     }
 
     public int getId() { return id; }
@@ -31,11 +35,12 @@ public class Empresa implements Serializable {
     public String getEndereco() { return endereco; }
     public void setEndereco(String endereco) { this.endereco = endereco; }
 
-    public String getTipoCozinha() { return tipoCozinha; }
-    public void setTipoCozinha(String tipoCozinha) { this.tipoCozinha = tipoCozinha; }
-
     public int getDonoId() { return donoId; }
     public void setDonoId(int donoId) { this.donoId = donoId; }
+
+    public List<Integer> getEntregadoresIds() { return entregadoresIds; }
+    public void setEntregadoresIds(List<Integer> ids) { this.entregadoresIds = ids; }
+    public void adicionarEntregadorId(int id) { this.entregadoresIds.add(id); }
 
     public static int getUltimoId() { return ultimoId; }
     public static void setUltimoId(int id) { ultimoId = id; }

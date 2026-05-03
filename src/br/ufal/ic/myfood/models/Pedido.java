@@ -26,7 +26,6 @@ public class Pedido implements Serializable {
         this.produtos = new ArrayList<>();
     }
 
-    // Getters e Setters
     public int getNumero() { return numero; }
     public void setNumero(int numero) { this.numero = numero; }
 

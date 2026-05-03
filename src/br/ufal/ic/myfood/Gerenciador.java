@@ -28,22 +28,26 @@ public class Gerenciador {
                 List<Empresa> empresas = (List<Empresa>) dados[1];
                 List<Produto> produtos = (List<Produto>) dados[2];
                 List<Pedido> pedidos = (List<Pedido>) dados[3];
+                List<Entrega> entregas = (List<Entrega>) dados[4];
 
                 usuarioManager.setPessoas(pessoas);
                 empresaManager.setEmpresas(empresas);
                 produtoManager.setProdutos(produtos);
                 pedidoManager.setPedidos(pedidos);
+                pedidoManager.setEntregas(entregas);
 
                 // Restaurar contadores
                 int maxPessoaId = pessoas.stream().mapToInt(Pessoa::getId).max().orElse(0);
                 int maxEmpresaId = empresas.stream().mapToInt(Empresa::getId).max().orElse(0);
                 int maxProdutoId = produtos.stream().mapToInt(Produto::getId).max().orElse(0);
                 int maxPedidoNum = pedidos.stream().mapToInt(Pedido::getNumero).max().orElse(0);
+                int maxEntregaId = entregas.stream().mapToInt(Entrega::getId).max().orElse(0);
 
                 Pessoa.setUltimoId(maxPessoaId);
                 Empresa.setUltimoId(maxEmpresaId);
                 Produto.setUltimoId(maxProdutoId);
                 Pedido.setUltimoNumero(maxPedidoNum);
+                Entrega.setUltimoId(maxEntregaId);
 
                 // Reatribuir referências cruzadas
                 empresaManager.setUsuarioManager(usuarioManager);
@@ -88,6 +92,11 @@ public class Gerenciador {
         usuarioManager.criarProprietario(nome, email, senha, endereco, cpf);
     }
 
+    public void criarUsuario(String nome, String email, String senha, String endereco, String veiculo, String placa)
+            throws CampoInvalidoException, UsuarioJaExisteException {
+        usuarioManager.criarEntregador(nome, email, senha, endereco, veiculo, placa);
+    }
+
     public String getAtributoUsuario(int id, String atributo)
             throws UsuarioNaoExisteException, CampoInvalidoException {
         return usuarioManager.getAtributoUsuario(id, atributo);
@@ -98,9 +107,29 @@ public class Gerenciador {
     }
 
     // Delegações para EmpresaManager
+    // Restaurante
     public int criarEmpresa(String tipoEmpresa, int dono, String nome, String endereco, String tipoCozinha)
             throws CampoInvalidoException, UsuarioNaoPodeCriarEmpresaException, EmpresaJaExisteException {
         return empresaManager.criarEmpresa(tipoEmpresa, dono, nome, endereco, tipoCozinha);
+    }
+
+    // Mercado
+    public int criarEmpresa(String tipoEmpresa, int dono, String nome, String endereco,
+                            String abre, String fecha, String tipoMercado)
+            throws CampoInvalidoException, UsuarioNaoPodeCriarEmpresaException, EmpresaJaExisteException {
+        return empresaManager.criarEmpresa(tipoEmpresa, dono, nome, endereco, abre, fecha, tipoMercado);
+    }
+
+    public void alterarFuncionamento(int mercado, String abre, String fecha)
+            throws CampoInvalidoException, EmpresaNaoExisteException {
+        empresaManager.alterarFuncionamento(mercado, abre, fecha);
+    }
+
+    // Farmácia
+    public int criarEmpresa(String tipoEmpresa, int dono, String nome, String endereco,
+                            boolean aberto24Horas, int numeroFuncionarios)
+            throws CampoInvalidoException, UsuarioNaoPodeCriarEmpresaException, EmpresaJaExisteException {
+        return empresaManager.criarEmpresa(tipoEmpresa, dono, nome, endereco, aberto24Horas, numeroFuncionarios);
     }
 
     public String getEmpresasDoUsuario(int idDono) throws UsuarioNaoPodeCriarEmpresaException {
@@ -115,6 +144,22 @@ public class Gerenciador {
     public String getAtributoEmpresa(int empresa, String atributo)
             throws EmpresaNaoExisteException, CampoInvalidoException {
         return empresaManager.getAtributoEmpresa(empresa, atributo);
+    }
+
+    // Entregadores
+    public void cadastrarEntregador(int empresa, int entregador)
+            throws EmpresaNaoExisteException, UsuarioNaoExisteException, CampoInvalidoException {
+        empresaManager.cadastrarEntregador(empresa, entregador);
+    }
+
+    public String getEntregadores(int empresa)
+            throws EmpresaNaoExisteException {
+        return empresaManager.getEntregadores(empresa);
+    }
+
+    public String getEmpresas(int entregador)
+            throws UsuarioNaoExisteException, CampoInvalidoException {
+        return empresaManager.getEmpresas(entregador);
     }
 
     // Delegações para ProdutoManager
@@ -164,5 +209,25 @@ public class Gerenciador {
     public String getPedidos(int numero, String atributo)
             throws CampoInvalidoException, PedidoNaoEncontradoException {
         return pedidoManager.getPedidos(numero, atributo);
+    }
+
+    public void liberarPedido(int numero) throws PedidoNaoEncontradoException, CampoInvalidoException {
+        pedidoManager.liberarPedido(numero);
+    }
+    public int obterPedido(int entregador) throws UsuarioNaoExisteException, EntregadorSemEmpresaException, NaoExistePedidoParaEntregaException, CampoInvalidoException {
+        return pedidoManager.obterPedido(entregador);
+    }
+    public int criarEntrega(int pedido, int entregador, String destino)
+            throws PedidoNaoEncontradoException, UsuarioNaoExisteException, PedidoNaoEstaProntoException, EntregadorEmEntregaException, CampoInvalidoException {
+        return pedidoManager.criarEntrega(pedido, entregador, destino);
+    }
+    public String getEntrega(int id, String atributo) throws EntregaNaoEncontradaException, CampoInvalidoException {
+        return pedidoManager.getEntrega(id, atributo);
+    }
+    public int getIdEntrega(int pedido) throws EntregaNaoEncontradaException {
+        return pedidoManager.getIdEntrega(pedido);
+    }
+    public void entregar(int entrega) throws EntregaNaoEncontradaException, PedidoNaoEncontradoException {
+        pedidoManager.entregar(entrega);
     }
 }

@@ -6,29 +6,42 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 public class PedidoManager implements Serializable {
     private static final long serialVersionUID = 1L;
     private List<Pedido> pedidos;
+    private List<Entrega> entregas;
     private transient UsuarioManager usuarioManager;
     private transient EmpresaManager empresaManager;
     private transient ProdutoManager produtoManager;
 
     public PedidoManager(UsuarioManager usuarioManager, EmpresaManager empresaManager, ProdutoManager produtoManager) {
         this.pedidos = new ArrayList<>();
+        this.entregas = new ArrayList<>();
         this.usuarioManager = usuarioManager;
         this.empresaManager = empresaManager;
         this.produtoManager = produtoManager;
     }
 
-    public void setUsuarioManager(UsuarioManager usuarioManager) { this.usuarioManager = usuarioManager; }
-    public void setEmpresaManager(EmpresaManager empresaManager) { this.empresaManager = empresaManager; }
-    public void setProdutoManager(ProdutoManager produtoManager) { this.produtoManager = produtoManager; }
+    public void setUsuarioManager(UsuarioManager usuarioManager) {
+        this.usuarioManager = usuarioManager;
+    }
+
+    public void setEmpresaManager(EmpresaManager empresaManager) {
+        this.empresaManager = empresaManager;
+    }
+
+    public void setProdutoManager(ProdutoManager produtoManager) {
+        this.produtoManager = produtoManager;
+    }
 
     public void reset() {
         pedidos.clear();
+        entregas.clear();
         Pedido.resetUltimoNumero();
+        Entrega.resetUltimoId();
     }
 
     public int criarPedido(int clienteId, int empresaId)
@@ -134,6 +147,136 @@ public class PedidoManager implements Serializable {
         return null;
     }
 
-    public List<Pedido> getPedidos() { return pedidos; }
-    public void setPedidos(List<Pedido> pedidos) { this.pedidos = pedidos; }
+    public List<Pedido> getPedidos() {
+        return pedidos;
+    }
+
+    public void setPedidos(List<Pedido> pedidos) {
+        this.pedidos = pedidos;
+    }
+
+    public List<Entrega> getEntregas() {
+        return entregas;
+    }
+
+    public void setEntregas(List<Entrega> entregas) {
+        this.entregas = entregas;
+    }
+
+    public void liberarPedido(int numeroPedido) throws PedidoNaoEncontradoException, CampoInvalidoException {
+        Pedido p = buscarPorNumero(numeroPedido);
+        if (p == null) throw new PedidoNaoEncontradoException();
+
+        if ("pronto".equals(p.getEstado())) {
+            throw new CampoInvalidoException("Pedido ja liberado");
+        }
+        if (!"preparando".equals(p.getEstado())) {
+            throw new CampoInvalidoException("Nao e possivel liberar um produto que nao esta sendo preparado");
+        }
+        p.setEstado("pronto");
+    }
+
+    public int obterPedido(int entregadorId) throws UsuarioNaoExisteException, EntregadorSemEmpresaException, NaoExistePedidoParaEntregaException, CampoInvalidoException {
+        Pessoa pessoa = usuarioManager.buscarPorId(entregadorId);
+        if (pessoa == null) throw new UsuarioNaoExisteException();
+        if (!(pessoa instanceof Entregador))
+            throw new CampoInvalidoException("Usuario nao e um entregador");
+
+        Entregador entregador = (Entregador) pessoa;
+        List<Integer> empresasIds = entregador.getEmpresasIds();
+        if (empresasIds.isEmpty()) throw new EntregadorSemEmpresaException();
+
+        List<Pedido> pedidosProntos = new ArrayList<>();
+        for (Pedido p : pedidos) {
+            if ("pronto".equals(p.getEstado()) && empresasIds.contains(p.getEmpresaId())) {
+                pedidosProntos.add(p);
+            }
+        }
+        if (pedidosProntos.isEmpty()) throw new NaoExistePedidoParaEntregaException();
+
+        List<Pedido> farmacias = new ArrayList<>();
+        List<Pedido> outros = new ArrayList<>();
+        for (Pedido p : pedidosProntos) {
+            Empresa e = empresaManager.buscarPorId(p.getEmpresaId());
+            if (e instanceof Farmacia) farmacias.add(p);
+            else outros.add(p);
+        }
+        farmacias.sort(Comparator.comparingInt(Pedido::getNumero));
+        outros.sort(Comparator.comparingInt(Pedido::getNumero));
+
+        if (!farmacias.isEmpty()) return farmacias.get(0).getNumero();
+        if (!outros.isEmpty()) return outros.get(0).getNumero();
+        throw new NaoExistePedidoParaEntregaException();
+    }
+
+    public int criarEntrega(int pedidoNumero, int entregadorId, String destino)
+            throws PedidoNaoEncontradoException, UsuarioNaoExisteException, PedidoNaoEstaProntoException, EntregadorEmEntregaException, CampoInvalidoException {
+
+        Pedido pedido = buscarPorNumero(pedidoNumero);
+        if (pedido == null) throw new PedidoNaoEncontradoException();
+        if (!"pronto".equals(pedido.getEstado()))
+            throw new PedidoNaoEstaProntoException();
+
+        Pessoa pessoa = usuarioManager.buscarPorId(entregadorId);
+        if (pessoa == null) throw new UsuarioNaoExisteException();
+        if (!(pessoa instanceof Entregador))
+            throw new CampoInvalidoException("Nao e um entregador valido");
+
+        Entregador entregador = (Entregador) pessoa;
+
+        // Verifica se entregador já está em uma entrega ativa
+        for (Entrega e : entregas) {
+            Pedido p = buscarPorNumero(e.getPedidoNumero());
+            if (p != null && "entregando".equals(p.getEstado()) && e.getEntregadorId() == entregadorId) {
+                throw new EntregadorEmEntregaException();
+            }
+        }
+
+        // Destino = endereço do cliente se não informado
+        if (destino == null || destino.trim().isEmpty()) {
+            Pessoa cliente = usuarioManager.buscarPorId(pedido.getClienteId());
+            if (cliente == null) throw new UsuarioNaoExisteException();
+            destino = cliente.getEndereco();
+        }
+
+        // Infos da entrega
+        String nomeCliente = usuarioManager.buscarPorId(pedido.getClienteId()).getNome();
+        Empresa empresa = empresaManager.buscarPorId(pedido.getEmpresaId());
+        String nomeEmpresa = empresa.getNome();
+        String nomeEntregador = entregador.getNome();
+        List<Produto> produtos = new ArrayList<>(pedido.getProdutos());
+
+        Entrega nova = new Entrega(pedidoNumero, entregadorId, destino, nomeCliente, nomeEmpresa, nomeEntregador, produtos);
+        entregas.add(nova);
+        pedido.setEstado("entregando");
+        return nova.getId();
+    }
+
+    public String getEntrega(int entregaId, String atributo) throws EntregaNaoEncontradaException, CampoInvalidoException {
+        if (atributo == null || atributo.trim().isEmpty())
+            throw new CampoInvalidoException("Atributo invalido");
+        Entrega e = buscarEntregaPorId(entregaId);
+        if (e == null) throw new EntregaNaoEncontradaException();
+        return e.getAtributo(atributo);
+    }
+
+    public int getIdEntrega(int pedidoNumero) throws EntregaNaoEncontradaException {
+        for (Entrega e : entregas) {
+            if (e.getPedidoNumero() == pedidoNumero) return e.getId();
+        }
+        throw new EntregaNaoEncontradaException("Nao existe entrega com esse id");
+    }
+
+    public void entregar(int entregaId) throws EntregaNaoEncontradaException, PedidoNaoEncontradoException {
+        Entrega e = buscarEntregaPorId(entregaId);
+        if (e == null) throw new EntregaNaoEncontradaException("Nao existe nada para ser entregue com esse id");
+        Pedido p = buscarPorNumero(e.getPedidoNumero());
+        if (p == null) throw new PedidoNaoEncontradoException();
+        p.setEstado("entregue");
+    }
+
+    private Entrega buscarEntregaPorId(int id) {
+        for (Entrega e : entregas) if (e.getId() == id) return e;
+        return null;
+    }
 }

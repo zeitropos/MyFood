@@ -3,6 +3,7 @@ package br.ufal.ic.myfood.managers;
 import br.ufal.ic.myfood.models.Pessoa;
 import br.ufal.ic.myfood.models.Usuario;
 import br.ufal.ic.myfood.models.Proprietario;
+import br.ufal.ic.myfood.models.Entregador;
 import br.ufal.ic.myfood.exceptions.*;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,6 +20,20 @@ public class UsuarioManager implements Serializable {
     public void reset() {
         pessoas.clear();
         Pessoa.resetUltimoId();
+    }
+
+    private void validarCampos(String nome, String email, String senha, String endereco) throws CampoInvalidoException {
+        if (nome == null || nome.trim().isEmpty()) throw new CampoInvalidoException("Nome invalido");
+        if (email == null || email.trim().isEmpty()) throw new CampoInvalidoException("Email invalido");
+        if (!email.contains("@")) throw new CampoInvalidoException("Email invalido");
+        if (senha == null || senha.trim().isEmpty()) throw new CampoInvalidoException("Senha invalido");
+        if (endereco == null || endereco.trim().isEmpty()) throw new CampoInvalidoException("Endereco invalido");
+    }
+
+    private void verificarEmailUnico(String email) throws UsuarioJaExisteException {
+        for (Pessoa p : pessoas) {
+            if (p.getEmail().equals(email)) throw new UsuarioJaExisteException();
+        }
     }
 
     public void criarCliente(String nome, String email, String senha, String endereco)
@@ -39,25 +54,20 @@ public class UsuarioManager implements Serializable {
         pessoas.add(new Proprietario(nome, email, senha, endereco, cpf));
     }
 
-    private void validarCampos(String nome, String email, String senha, String endereco)
-            throws CampoInvalidoException {
-        if (nome == null || nome.trim().isEmpty())
-            throw new CampoInvalidoException("Nome invalido");
-        if (email == null || email.trim().isEmpty())
-            throw new CampoInvalidoException("Email invalido");
-        if (!email.contains("@"))
-            throw new CampoInvalidoException("Email invalido");
-        if (senha == null || senha.trim().isEmpty())
-            throw new CampoInvalidoException("Senha invalido");
-        if (endereco == null || endereco.trim().isEmpty())
-            throw new CampoInvalidoException("Endereco invalido");
-    }
-
-    private void verificarEmailUnico(String email) throws UsuarioJaExisteException {
+    public void criarEntregador(String nome, String email, String senha, String endereco, String veiculo, String placa)
+            throws CampoInvalidoException, UsuarioJaExisteException {
+        validarCampos(nome, email, senha, endereco);
+        if (veiculo == null || veiculo.trim().isEmpty())
+            throw new CampoInvalidoException("Veiculo invalido");
+        if (placa == null || placa.trim().isEmpty())
+            throw new CampoInvalidoException("Placa invalido");
         for (Pessoa p : pessoas) {
-            if (p.getEmail().equals(email))
-                throw new UsuarioJaExisteException();
+            if (p instanceof Entregador && ((Entregador) p).getPlaca().equalsIgnoreCase(placa)) {
+                throw new CampoInvalidoException("Placa invalido");
+            }
         }
+        verificarEmailUnico(email);
+        pessoas.add(new Entregador(nome, email, senha, endereco, veiculo, placa));
     }
 
     public int login(String email, String senha) throws LoginInvalidoException {
@@ -73,16 +83,7 @@ public class UsuarioManager implements Serializable {
             throws UsuarioNaoExisteException, CampoInvalidoException {
         Pessoa p = buscarPorId(id);
         if (p == null) throw new UsuarioNaoExisteException();
-        switch (atributo.toLowerCase()) {
-            case "nome": return p.getNome();
-            case "email": return p.getEmail();
-            case "senha": return p.getSenha();
-            case "endereco": return p.getEndereco();
-            case "cpf":
-                if (p instanceof Proprietario) return ((Proprietario) p).getCpf();
-                else return "";
-            default: throw new CampoInvalidoException("Atributo invalido");
-        }
+        return p.getAtributo(atributo);
     }
 
     public Pessoa buscarPorId(int id) {

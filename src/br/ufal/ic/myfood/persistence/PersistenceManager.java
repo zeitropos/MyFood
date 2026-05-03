@@ -16,6 +16,7 @@ public class PersistenceManager {
             encoder.writeObject(em.getEmpresas());
             encoder.writeObject(pm.getProdutos());
             encoder.writeObject(pedm.getPedidos());
+            encoder.writeObject(pedm.getEntregas());
         }
     }
 
@@ -26,7 +27,8 @@ public class PersistenceManager {
             List<Empresa> empresas = (List<Empresa>) decoder.readObject();
             List<Produto> produtos = (List<Produto>) decoder.readObject();
             List<Pedido> pedidos = (List<Pedido>) decoder.readObject();
-            return new Object[]{pessoas, empresas, produtos, pedidos};
+            List<Entrega> entregas = (List<Entrega>) decoder.readObject();
+            return new Object[]{pessoas, empresas, produtos, pedidos, entregas};
         }
     }
 
