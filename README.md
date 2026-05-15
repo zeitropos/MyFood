@@ -23,7 +23,7 @@ O projeto segue tanto o padrão Facade quanto a arquitetura em camadas, garantin
 | Caminho | Descrição |
 | :--- | :--- |
 | `src/br/ufal/ic/myfood/Facade.java` | Interface de comunicação para o EasyAccept |
-| `src/br/ufal/ic/myfood/Gerenciador.java` | Orquestrador central (coordenador dos managers) |
+| `src/br/ufal/ic/myfood/Gerenciador.java` | Orquestrador central (delega operações de negócio aos managers) |
 | `src/br/ufal/ic/myfood/models/Pessoa.java` | Classe abstrata base para usuários |
 | `src/br/ufal/ic/myfood/models/Usuario.java` | Cliente (herda de `Pessoa`) |
 | `src/br/ufal/ic/myfood/models/Proprietario.java` | Dono de restaurante (herda de `Pessoa`) |
@@ -40,7 +40,7 @@ O projeto segue tanto o padrão Facade quanto a arquitetura em camadas, garantin
 | `src/br/ufal/ic/myfood/managers/ProdutoManager.java` | Lógica de criação, edição, listagem de produtos |
 | `src/br/ufal/ic/myfood/managers/PedidoManager.java` | Lógica de pedidos, adição/remoção de produtos, fechamento, liberação, entregas |
 | `src/br/ufal/ic/myfood/persistence/PersistenceManager.java` | Persistência em XML usando `XMLEncoder`/`XMLDecoder` |
-| `src/br/ufal/ic/myfood/persistence/PersistenceHelper.java` | Orquestração da persistência: carregar, salvar, zerar sistema, restaurar contadores |
+| `src/br/ufal/ic/myfood/persistence/PersistenceHelper.java` | Orquestração da persistência: carregar (chama o manager e restaura contadores), salvar (delega ao manager), zerar sistema (reseta managers e apaga arquivo) |
 | `src/br/ufal/ic/myfood/exceptions/` | Exceções personalizadas (ex: `UsuarioJaExisteException`, `CampoInvalidoException`, `PedidoNaoEncontradoException`, etc) |
 | `lib/` | Contém `easyaccept.jar` |
 | `tests/` | Scripts de teste `us1_1.txt` até `us8_2.txt` |
