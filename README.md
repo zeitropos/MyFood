@@ -40,6 +40,7 @@ O projeto segue tanto o padrão Facade quanto a arquitetura em camadas, garantin
 | `src/br/ufal/ic/myfood/managers/ProdutoManager.java` | Lógica de criação, edição, listagem de produtos |
 | `src/br/ufal/ic/myfood/managers/PedidoManager.java` | Lógica de pedidos, adição/remoção de produtos, fechamento, liberação, entregas |
 | `src/br/ufal/ic/myfood/persistence/PersistenceManager.java` | Persistência em XML usando `XMLEncoder`/`XMLDecoder` |
+| `src/br/ufal/ic/myfood/persistence/PersistenceHelper.java` | Orquestração da persistência: carregar, salvar, zerar sistema, restaurar contadores |
 | `src/br/ufal/ic/myfood/exceptions/` | Exceções personalizadas (ex: `UsuarioJaExisteException`, `CampoInvalidoException`, `PedidoNaoEncontradoException`, etc) |
 | `lib/` | Contém `easyaccept.jar` |
 | `tests/` | Scripts de teste `us1_1.txt` até `us8_2.txt` |
@@ -49,8 +50,9 @@ O projeto segue tanto o padrão Facade quanto a arquitetura em camadas, garantin
 ### Principais decisões técnicas
 
 - **Herança** – `Usuario`, `Proprietario` e `Entregador` herdam de `Pessoa`; `Restaurante`, `Mercado` e `Farmacia` herdam de `Empresa`.
+- **Polimorfismo** – O método `getAtributo` é sobrescrito em cada subclasse, eliminando `instanceof` para obtenção de atributos. O método `isFarmacia()` permite priorizar pedidos sem verificação de tipo.
 - **Managers especializados** – Cada entidade possui um manager com sua lógica de negócio, mantendo o código coeso e facilitando testes.
-- **Gerenciador central** – A classe `Gerenciador` orquestra os managers e centraliza o carregamento/salvamento de dados.
+- **Gerenciador central** – A classe `Gerenciador` orquestra os managers. A persistência foi delegada para `PersistenceHelper`, e o salvamento/carregamento em `PersistenceManager`.
 - **Persistência nativa** – Uso de `XMLEncoder`/`XMLDecoder` para salvar os dados em `myfood_data.xml`.  
 - **IDs sequenciais** – Gerados automaticamente e restaurados após carregar os dados, conforme exigido pelos testes.
 - **Tratamento de exceções** – Exceções específicas com as mensagens exatas que os testes esperam.
