@@ -3,83 +3,27 @@ package br.ufal.ic.myfood;
 import br.ufal.ic.myfood.managers.*;
 import br.ufal.ic.myfood.models.*;
 import br.ufal.ic.myfood.exceptions.*;
-import br.ufal.ic.myfood.persistence.PersistenceManager;
-import java.io.File;
-import java.util.List;
+import br.ufal.ic.myfood.persistence.PersistenceHelper;
 
 public class Gerenciador {
-    private UsuarioManager usuarioManager;
-    private EmpresaManager empresaManager;
-    private ProdutoManager produtoManager;
-    private PedidoManager pedidoManager;
+    private final UsuarioManager usuarioManager;
+    private final EmpresaManager empresaManager;
+    private final ProdutoManager produtoManager;
+    private final PedidoManager pedidoManager;
+    private final PersistenceHelper persistenceHelper;
 
     public Gerenciador() {
         this.usuarioManager = new UsuarioManager();
         this.empresaManager = new EmpresaManager(usuarioManager);
         this.produtoManager = new ProdutoManager(empresaManager);
         this.pedidoManager = new PedidoManager(usuarioManager, empresaManager, produtoManager);
+        this.persistenceHelper = new PersistenceHelper(usuarioManager, empresaManager, produtoManager, pedidoManager);
+        this.persistenceHelper.carregarDados();
     }
 
-    public void carregarDados() {
-        try {
-            if (PersistenceManager.existe()) {
-                Object[] dados = PersistenceManager.carregar();
-                List<Pessoa> pessoas = (List<Pessoa>) dados[0];
-                List<Empresa> empresas = (List<Empresa>) dados[1];
-                List<Produto> produtos = (List<Produto>) dados[2];
-                List<Pedido> pedidos = (List<Pedido>) dados[3];
-                List<Entrega> entregas = (List<Entrega>) dados[4];
+    public void zerarSistema() { persistenceHelper.zerar(); }
 
-                usuarioManager.setPessoas(pessoas);
-                empresaManager.setEmpresas(empresas);
-                produtoManager.setProdutos(produtos);
-                pedidoManager.setPedidos(pedidos);
-                pedidoManager.setEntregas(entregas);
-
-                // Restaurar contadores
-                int maxPessoaId = pessoas.stream().mapToInt(Pessoa::getId).max().orElse(0);
-                int maxEmpresaId = empresas.stream().mapToInt(Empresa::getId).max().orElse(0);
-                int maxProdutoId = produtos.stream().mapToInt(Produto::getId).max().orElse(0);
-                int maxPedidoNum = pedidos.stream().mapToInt(Pedido::getNumero).max().orElse(0);
-                int maxEntregaId = entregas.stream().mapToInt(Entrega::getId).max().orElse(0);
-
-                Pessoa.setUltimoId(maxPessoaId);
-                Empresa.setUltimoId(maxEmpresaId);
-                Produto.setUltimoId(maxProdutoId);
-                Pedido.setUltimoNumero(maxPedidoNum);
-                Entrega.setUltimoId(maxEntregaId);
-
-                // Reatribuir referências cruzadas
-                empresaManager.setUsuarioManager(usuarioManager);
-                produtoManager.setEmpresaManager(empresaManager);
-                pedidoManager.setUsuarioManager(usuarioManager);
-                pedidoManager.setEmpresaManager(empresaManager);
-                pedidoManager.setProdutoManager(produtoManager);
-            }
-        } catch (Exception e) {
-            System.err.println("Erro ao carregar dados: " + e.getMessage());
-        }
-    }
-
-    public void salvarDados() {
-        try {
-            PersistenceManager.salvar(usuarioManager, empresaManager, produtoManager, pedidoManager);
-        } catch (Exception e) {
-            System.err.println("Erro ao salvar dados: " + e.getMessage());
-        }
-    }
-
-    public void zerarSistema() {
-        usuarioManager.reset();
-        empresaManager.reset();
-        produtoManager.reset();
-        pedidoManager.reset();
-        new File("myfood_data.xml").delete();
-    }
-
-    public void encerrarSistema() {
-        salvarDados();
-    }
+    public void encerrarSistema() { persistenceHelper.salvarDados(); }
 
     // Delegações para UsuarioManager
     public void criarUsuario(String nome, String email, String senha, String endereco)

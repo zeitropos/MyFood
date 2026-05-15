@@ -1,11 +1,13 @@
 package br.ufal.ic.myfood.models;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import br.ufal.ic.myfood.exceptions.CampoInvalidoException;
 
 public class Entrega implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private static int ultimoId = 0;
 

@@ -3,12 +3,9 @@ package br.ufal.ic.myfood;
 import br.ufal.ic.myfood.exceptions.*;
 
 public class Facade {
-    private Gerenciador gerenciador;
+    private final Gerenciador gerenciador;
 
-    public Facade() {
-        gerenciador = new Gerenciador();
-        gerenciador.carregarDados();
-    }
+    public Facade() { gerenciador = new Gerenciador(); }
 
     public void zerarSistema() {
         gerenciador.zerarSistema();

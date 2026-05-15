@@ -1,5 +1,7 @@
 package br.ufal.ic.myfood.models;
 
+import br.ufal.ic.myfood.exceptions.CampoInvalidoException;
+
 public class Farmacia extends Empresa {
     private boolean aberto24Horas;
     private int numeroFuncionarios;
@@ -10,6 +12,19 @@ public class Farmacia extends Empresa {
         super(nome, endereco, donoId);
         this.aberto24Horas = aberto24Horas;
         this.numeroFuncionarios = numeroFuncionarios;
+    }
+    @Override
+    public String getAtributo(String atributo) throws CampoInvalidoException {
+        switch (atributo.toLowerCase()) {
+            case "aberto24horas": return String.valueOf(aberto24Horas);
+            case "numerofuncionarios": return String.valueOf(numeroFuncionarios);
+            default: return super.getAtributo(atributo);
+        }
+    }
+
+    @Override
+    public boolean isFarmacia() {
+        return true;
     }
 
     public boolean isAberto24Horas() { return aberto24Horas; }

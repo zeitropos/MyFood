@@ -2,12 +2,13 @@ package br.ufal.ic.myfood.managers;
 
 import br.ufal.ic.myfood.models.*;
 import br.ufal.ic.myfood.exceptions.*;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class EmpresaManager implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private List<Empresa> empresas;
     private transient UsuarioManager usuarioManager;
@@ -123,12 +124,11 @@ public class EmpresaManager implements Serializable {
         Empresa e = buscarPorId(empresaId);
         if (e == null)
             throw new EmpresaNaoExisteException("Nao e um mercado valido");
-        if (!(e instanceof Mercado))
+        if (!(e instanceof Mercado m))
             throw new CampoInvalidoException("Nao e um mercado valido");
 
         validarHorarios(abre, fecha);
 
-        Mercado m = (Mercado) e;
         m.setAbre(abre);
         m.setFecha(fecha);
     }
@@ -163,10 +163,8 @@ public class EmpresaManager implements Serializable {
 
         Pessoa pessoa = usuarioManager.buscarPorId(entregadorId);
         if (pessoa == null) throw new UsuarioNaoExisteException();
-        if (!(pessoa instanceof Entregador))
+        if (!(pessoa instanceof Entregador entregador))
             throw new CampoInvalidoException("Usuario nao e um entregador");
-
-        Entregador entregador = (Entregador) pessoa;
 
         if (empresa.getEntregadoresIds().contains(entregadorId))
             throw new CampoInvalidoException("Entregador ja cadastrado");
@@ -182,7 +180,7 @@ public class EmpresaManager implements Serializable {
         List<String> emails = new ArrayList<>();
         for (int id : empresa.getEntregadoresIds()) {
             Pessoa p = usuarioManager.buscarPorId(id);
-            if (p != null && p instanceof Entregador) {
+            if (p instanceof Entregador) {
                 emails.add(p.getEmail());
             }
         }
@@ -192,10 +190,9 @@ public class EmpresaManager implements Serializable {
     public String getEmpresas(int entregadorId) throws UsuarioNaoExisteException, CampoInvalidoException {
         Pessoa p = usuarioManager.buscarPorId(entregadorId);
         if (p == null) throw new UsuarioNaoExisteException();
-        if (!(p instanceof Entregador))
+        if (!(p instanceof Entregador entregador))
             throw new CampoInvalidoException("Usuario nao e um entregador");
 
-        Entregador entregador = (Entregador) p;
         List<String> empresasInfo = new ArrayList<>();
         for (int idEmp : entregador.getEmpresasIds()) {
             Empresa e = buscarPorId(idEmp);
@@ -212,7 +209,7 @@ public class EmpresaManager implements Serializable {
             throw new UsuarioNaoPodeCriarEmpresaException();
         List<Empresa> lista = empresas.stream()
                 .filter(e -> e.getDonoId() == donoId)
-                .collect(Collectors.toList());
+                .toList();
         if (lista.isEmpty()) return "{[]}";
         StringBuilder sb = new StringBuilder("{[[");
         for (int i = 0; i < lista.size(); i++) {
@@ -233,7 +230,7 @@ public class EmpresaManager implements Serializable {
             throw new UsuarioNaoPodeCriarEmpresaException();
         List<Empresa> lista = empresas.stream()
                 .filter(e -> e.getDonoId() == donoId && e.getNome().equalsIgnoreCase(nome))
-                .collect(Collectors.toList());
+                .toList();
         if (lista.isEmpty()) throw new EmpresaNaoExisteException("Nao existe empresa com esse nome");
         if (indice >= lista.size()) throw new EmpresaNaoExisteException("Indice maior que o esperado");
         return lista.get(indice).getId();
@@ -247,37 +244,11 @@ public class EmpresaManager implements Serializable {
         if (atributo == null || atributo.trim().isEmpty())
             throw new CampoInvalidoException("Atributo invalido");
 
-        switch (atributo.toLowerCase()) {
-            case "nome": return e.getNome();
-            case "endereco": return e.getEndereco();
-            case "dono": return usuarioManager.buscarPorId(e.getDonoId()).getNome();
-
-            // Restaurante
-            case "tipocozinha":
-                if (e instanceof Restaurante) return ((Restaurante) e).getTipoCozinha();
-                throw new CampoInvalidoException("Atributo invalido");
-
-                // Mercado
-            case "abre":
-                if (e instanceof Mercado) return ((Mercado) e).getAbre();
-                throw new CampoInvalidoException("Atributo invalido");
-            case "fecha":
-                if (e instanceof Mercado) return ((Mercado) e).getFecha();
-                throw new CampoInvalidoException("Atributo invalido");
-            case "tipomercado":
-                if (e instanceof Mercado) return ((Mercado) e).getTipoMercado();
-                throw new CampoInvalidoException("Atributo invalido");
-
-                // Farmácia
-            case "aberto24horas":
-                if (e instanceof Farmacia) return String.valueOf(((Farmacia) e).isAberto24Horas());
-                throw new CampoInvalidoException("Atributo invalido");
-            case "numerofuncionarios":
-                if (e instanceof Farmacia) return String.valueOf(((Farmacia) e).getNumeroFuncionarios());
-                throw new CampoInvalidoException("Atributo invalido");
-
-            default: throw new CampoInvalidoException("Atributo invalido");
+        if (atributo.equalsIgnoreCase("dono")) {
+            Pessoa dono = usuarioManager.buscarPorId(e.getDonoId());
+            return dono != null ? dono.getNome() : "";
         }
+        return e.getAtributo(atributo);
     }
 
     public Empresa buscarPorId(int id) {

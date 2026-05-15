@@ -31,9 +31,6 @@ public class Entregador extends Pessoa {
     public void adicionarEmpresaId(int empresaId) { this.empresasIds.add(empresaId); }
 
     @Override
-    public boolean isProprietario() { return false; }
-
-    @Override
     public String getAtributo(String atributo) throws CampoInvalidoException {
         switch (atributo.toLowerCase()) {
             case "veiculo": return veiculo;

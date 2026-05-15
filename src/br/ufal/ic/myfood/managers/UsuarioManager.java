@@ -5,11 +5,13 @@ import br.ufal.ic.myfood.models.Usuario;
 import br.ufal.ic.myfood.models.Proprietario;
 import br.ufal.ic.myfood.models.Entregador;
 import br.ufal.ic.myfood.exceptions.*;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UsuarioManager implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private List<Pessoa> pessoas;
 

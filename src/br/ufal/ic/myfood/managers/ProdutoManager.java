@@ -1,5 +1,6 @@
 package br.ufal.ic.myfood.managers;
 
+import java.io.Serial;
 import java.util.Locale;
 import br.ufal.ic.myfood.models.Produto;
 import br.ufal.ic.myfood.models.Empresa;
@@ -7,9 +8,9 @@ import br.ufal.ic.myfood.exceptions.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ProdutoManager implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private List<Produto> produtos;
     private transient EmpresaManager empresaManager;
@@ -28,13 +29,18 @@ public class ProdutoManager implements Serializable {
         Produto.resetUltimoId();
     }
 
-    public int criarProduto(int empresaId, String nome, double valor, String categoria)
-            throws CampoInvalidoException, EmpresaNaoExisteException, ProdutoJaExisteException {
+    private void validarProduto(String nome, double valor, String categoria) throws CampoInvalidoException {
         if (nome == null || nome.trim().isEmpty())
             throw new CampoInvalidoException("Nome invalido");
-        if (valor <= 0) throw new CampoInvalidoException("Valor invalido");
+        if (valor <= 0)
+            throw new CampoInvalidoException("Valor invalido");
         if (categoria == null || categoria.trim().isEmpty())
             throw new CampoInvalidoException("Categoria invalido");
+    }
+
+    public int criarProduto(int empresaId, String nome, double valor, String categoria)
+            throws CampoInvalidoException, EmpresaNaoExisteException, ProdutoJaExisteException {
+        validarProduto(nome, valor, categoria);
 
         Empresa e = empresaManager.buscarPorId(empresaId);
         if (e == null) throw new EmpresaNaoExisteException();
@@ -50,13 +56,10 @@ public class ProdutoManager implements Serializable {
 
     public void editarProduto(int produtoId, String nome, double valor, String categoria)
             throws CampoInvalidoException, ProdutoNaoExisteException {
+        validarProduto(nome, valor, categoria);
+
         Produto p = buscarPorId(produtoId);
         if (p == null) throw new ProdutoNaoExisteException("Produto nao cadastrado");
-        if (nome == null || nome.trim().isEmpty())
-            throw new CampoInvalidoException("Nome invalido");
-        if (valor <= 0) throw new CampoInvalidoException("Valor invalido");
-        if (categoria == null || categoria.trim().isEmpty())
-            throw new CampoInvalidoException("Categoria invalido");
         p.setNome(nome);
         p.setValor(valor);
         p.setCategoria(categoria);
@@ -88,7 +91,7 @@ public class ProdutoManager implements Serializable {
         if (e == null) throw new EmpresaNaoExisteException("Empresa nao encontrada");
         List<Produto> lista = produtos.stream()
                 .filter(p -> p.getEmpresaId() == empresaId)
-                .collect(Collectors.toList());
+                .toList();
         if (lista.isEmpty()) return "{[]}";
         StringBuilder sb = new StringBuilder("{[");
         for (int i = 0; i < lista.size(); i++) {

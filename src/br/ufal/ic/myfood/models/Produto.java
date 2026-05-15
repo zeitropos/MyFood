@@ -1,8 +1,10 @@
 package br.ufal.ic.myfood.models;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 public class Produto implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private static int ultimoId = 0;
 

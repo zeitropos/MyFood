@@ -1,10 +1,13 @@
 package br.ufal.ic.myfood.models;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
+import br.ufal.ic.myfood.exceptions.CampoInvalidoException;
 
 public abstract class Empresa implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private static int ultimoId = 0;
 
@@ -24,6 +27,18 @@ public abstract class Empresa implements Serializable {
         this.endereco = endereco;
         this.donoId = donoId;
         this.entregadoresIds = new ArrayList<>();
+    }
+
+    public String getAtributo(String atributo) throws CampoInvalidoException {
+        switch (atributo.toLowerCase()) {
+            case "nome": return nome;
+            case "endereco": return endereco;
+            default: throw new CampoInvalidoException("Atributo invalido");
+        }
+    }
+
+    public boolean isFarmacia() {
+        return false;
     }
 
     public int getId() { return id; }

@@ -1,9 +1,11 @@
 package br.ufal.ic.myfood.models;
 
+import java.io.Serial;
 import java.io.Serializable;
 import br.ufal.ic.myfood.exceptions.CampoInvalidoException;
 
 public abstract class Pessoa implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private static int ultimoId = 0;
 

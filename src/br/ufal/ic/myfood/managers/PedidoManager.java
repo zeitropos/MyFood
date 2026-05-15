@@ -2,14 +2,16 @@ package br.ufal.ic.myfood.managers;
 
 import br.ufal.ic.myfood.models.*;
 import br.ufal.ic.myfood.exceptions.*;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Comparator;
-import java.util.stream.Collectors;
 
 public class PedidoManager implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private List<Pedido> pedidos;
     private List<Entrega> entregas;
@@ -67,8 +69,8 @@ public class PedidoManager implements Serializable {
         if (indice < 0) throw new CampoInvalidoException("Indice invalido");
         List<Pedido> lista = pedidos.stream()
                 .filter(p -> p.getClienteId() == clienteId && p.getEmpresaId() == empresaId)
-                .sorted((p1, p2) -> Integer.compare(p1.getNumero(), p2.getNumero()))
-                .collect(Collectors.toList());
+                .sorted(Comparator.comparingInt(Pedido::getNumero))
+                .toList();
         if (indice >= lista.size()) throw new CampoInvalidoException("Indice maior que o esperado");
         return lista.get(indice).getNumero();
     }
@@ -179,10 +181,9 @@ public class PedidoManager implements Serializable {
     public int obterPedido(int entregadorId) throws UsuarioNaoExisteException, EntregadorSemEmpresaException, NaoExistePedidoParaEntregaException, CampoInvalidoException {
         Pessoa pessoa = usuarioManager.buscarPorId(entregadorId);
         if (pessoa == null) throw new UsuarioNaoExisteException();
-        if (!(pessoa instanceof Entregador))
+        if (!(pessoa instanceof Entregador entregador))
             throw new CampoInvalidoException("Usuario nao e um entregador");
 
-        Entregador entregador = (Entregador) pessoa;
         List<Integer> empresasIds = entregador.getEmpresasIds();
         if (empresasIds.isEmpty()) throw new EntregadorSemEmpresaException();
 
@@ -198,14 +199,14 @@ public class PedidoManager implements Serializable {
         List<Pedido> outros = new ArrayList<>();
         for (Pedido p : pedidosProntos) {
             Empresa e = empresaManager.buscarPorId(p.getEmpresaId());
-            if (e instanceof Farmacia) farmacias.add(p);
+            if (e.isFarmacia()) farmacias.add(p);
             else outros.add(p);
         }
         farmacias.sort(Comparator.comparingInt(Pedido::getNumero));
         outros.sort(Comparator.comparingInt(Pedido::getNumero));
 
-        if (!farmacias.isEmpty()) return farmacias.get(0).getNumero();
-        if (!outros.isEmpty()) return outros.get(0).getNumero();
+        if (!farmacias.isEmpty()) return farmacias.getFirst().getNumero();
+        if (!outros.isEmpty()) return outros.getFirst().getNumero();
         throw new NaoExistePedidoParaEntregaException();
     }
 
@@ -219,10 +220,8 @@ public class PedidoManager implements Serializable {
 
         Pessoa pessoa = usuarioManager.buscarPorId(entregadorId);
         if (pessoa == null) throw new UsuarioNaoExisteException();
-        if (!(pessoa instanceof Entregador))
+        if (!(pessoa instanceof Entregador entregador))
             throw new CampoInvalidoException("Nao e um entregador valido");
-
-        Entregador entregador = (Entregador) pessoa;
 
         // Verifica se entregador já está em uma entrega ativa
         for (Entrega e : entregas) {

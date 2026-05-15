@@ -1,5 +1,7 @@
 package br.ufal.ic.myfood.models;
 
+import br.ufal.ic.myfood.exceptions.CampoInvalidoException;
+
 public class Mercado extends Empresa {
     private String abre;
     private String fecha;
@@ -12,6 +14,15 @@ public class Mercado extends Empresa {
         this.abre = abre;
         this.fecha = fecha;
         this.tipoMercado = tipoMercado;
+    }
+    @Override
+    public String getAtributo(String atributo) throws CampoInvalidoException {
+        switch (atributo.toLowerCase()) {
+            case "abre": return abre;
+            case "fecha": return fecha;
+            case "tipomercado": return tipoMercado;
+            default: return super.getAtributo(atributo);
+        }
     }
 
     public String getAbre() { return abre; }
